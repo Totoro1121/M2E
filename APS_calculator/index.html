@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phase 1 Re-Annotation Platform</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Phase 1 Workflow</p>
+        <h1>Human Re-Annotation Platform</h1>
+        <p class="hero-text">
+          Review the original AgentDojo trace, complete the propagation fields in a survey flow,
+          and export an annotation CSV that stays easy to analyze later.
+        </p>
+        <div class="hero-actions toolbar-actions">
+          <button type="button" class="ghost-button import-button" id="import-annotation-button">Import Annotation CSV</button>
+          <button type="button" class="ghost-button import-button secondary-import-button" id="trace-folder-button">Connect Runs Folder</button>
+          <button type="button" class="ghost-button" id="export-button">Export Annotation CSV</button>
+          <button type="button" class="ghost-button accent-button" id="export-enriched-button">Export Enriched CSV</button>
+        </div>
+        <input id="annotation-file-input" type="file" accept=".csv,text/csv" hidden>
+        <input id="trace-folder-input" type="file" webkitdirectory directory multiple hidden>
+        <div class="hero-status-strip">
+          <div class="action-status-card">
+            <span class="status-label">Annotation CSV</span>
+            <strong id="annotation-file-status">No CSV loaded yet</strong>
+          </div>
+          <div class="action-status-card">
+            <span class="status-label">Trace Folder</span>
+            <strong id="trace-folder-status">No trace folder connected</strong>
+          </div>
+        </div>
+      </div>
+      <aside class="hero-note">
+        <p class="note-title">What changed</p>
+        <p>
+          The app now centers the original trace itself. Annotators can inspect injections, message flow,
+          tool calls, tool outputs, machine evidence summaries, and the raw JSON before making a judgment.
+        </p>
+      </aside>
+    </header>
+
+    <section class="panel setup-panel">
+      <div class="panel-heading">
+        <h2>Session Snapshot</h2>
+        <p>
+          Imports now live in the top action bar. This section stays focused on session state,
+          export naming, and whether the dataset and trace folder are ready.
+        </p>
+      </div>
+      <div class="setup-grid">
+        <div class="setup-card">
+          <span class="setup-step">1</span>
+          <strong>Dataset Status</strong>
+          <p>Load <code>annotation_template.csv</code> or resume from an existing <code>annotator_*.csv</code>.</p>
+          <div id="dataset-spotlight" class="status-spotlight"></div>
+        </div>
+
+        <div class="setup-card session-card">
+          <span class="setup-step">2</span>
+          <strong>Trace Coverage</strong>
+          <p>Connect the local <code>runs</code> folder so the original JSON traces render on demand.</p>
+          <div id="trace-spotlight" class="status-spotlight"></div>
+        </div>
+
+        <div class="setup-card session-card">
+          <span class="setup-step">3</span>
+          <strong>Export naming</strong>
+          <p>Pick a filename for your current annotation pass. The app keeps the loaded CSV schema and writes back the human fields.</p>
+          <label class="text-label" for="export-name-input">Export filename</label>
+          <input id="export-name-input" class="text-input" type="text" value="annotator_A.csv" spellcheck="false">
+          <div id="session-status" class="session-status"></div>
+        </div>
+      </div>
+    </section>
+
+    <main class="layout empty-state" id="app-layout">
+      <section class="left-column">
+        <section class="panel navigator-panel">
+          <div class="navigator-header">
+            <div>
+              <p class="eyebrow">Trace Queue</p>
+              <h2 id="queue-title">Load a CSV to begin</h2>
+            </div>
+            <div class="navigator-hint">
+              <span class="status-pill">Bottom controls</span>
+              <p class="muted">Save and navigation stay with the questionnaire footer.</p>
+            </div>
+          </div>
+          <div class="navigator-grid">
+            <label class="text-label" for="record-select">Current record</label>
+            <select id="record-select" class="select-input"></select>
+            <div id="progress-summary" class="progress-summary"></div>
+          </div>
+        </section>
+
+        <section class="panel trace-summary-panel">
+          <div class="panel-heading">
+            <h2>Trace Summary</h2>
+            <p>The benchmark labels and machine candidate are visible, but the original trace remains the primary evidence source.</p>
+          </div>
+          <div id="trace-summary" class="trace-summary"></div>
+          <details class="machine-reference">
+            <summary>Machine candidate reference</summary>
+            <div id="machine-reference" class="machine-reference-grid"></div>
+          </details>
+        </section>
+
+        <section class="panel trace-panel">
+          <div class="panel-heading">
+            <h2>Original Trace</h2>
+            <p>
+              The timeline below is built from the raw run JSON. It shows injections, messages, tool calls,
+              tool outputs, and the exact text that human annotators are reviewing.
+            </p>
+          </div>
+          <div id="trace-alert" class="trace-alert"></div>
+          <div id="evidence-summary-panel" class="evidence-summary-panel"></div>
+          <div id="trace-viewer" class="trace-viewer"></div>
+          <details class="raw-json-panel">
+            <summary>Raw JSON trace</summary>
+            <pre id="raw-json-output" class="raw-json-output"></pre>
+          </details>
+        </section>
+      </section>
+
+      <aside class="right-column">
+        <section class="panel sticky-panel">
+          <div class="annotation-header">
+            <p class="eyebrow">Human Annotation</p>
+            <h2 id="annotation-title">No record selected</h2>
+            <p id="annotation-subtitle" class="muted"></p>
+          </div>
+
+          <div id="save-status-panel" class="save-status-panel"></div>
+          <div id="advisory-panel" class="advisory-panel"></div>
+
+          <form id="annotation-form" class="annotation-form">
+            <div id="field-groups" class="field-groups"></div>
+
+            <section class="field-card">
+              <div class="field-header">
+                <div>
+                  <span class="metric-chip">Required</span>
+                  <h3>Human Path</h3>
+                </div>
+                <p class="muted">
+                  Use one of the common path presets or enter a custom JSON array. The deepest path element should match
+                  <code>human_max_level</code>.
+                </p>
+              </div>
+              <div class="path-helper-row">
+                <button type="button" class="ghost-button" id="use-suggested-path-button">Use Suggested Path</button>
+                <div class="path-preview">
+                  <span>Suggested</span>
+                  <strong id="suggested-path-output">Waiting for context exposure and max level</strong>
+                </div>
+              </div>
+              <div id="path-presets" class="path-presets"></div>
+              <div id="path-explanation" class="selection-explanation"></div>
+              <label class="text-label" for="human-path-input">Selected path JSON</label>
+              <input id="human-path-input" class="text-input code-input" type="text" spellcheck="false" placeholder='["X","L1","L2"]'>
+            </section>
+
+            <section class="field-card">
+              <div class="field-header">
+                <div>
+                  <span class="metric-chip">Optional</span>
+                  <h3>Human Notes</h3>
+                </div>
+                <p class="muted">
+                  Capture why you overrode the machine candidate, where the strongest evidence appears, or why the case needs adjudication.
+                </p>
+              </div>
+              <textarea id="human-notes-input" class="notes-input" placeholder="Short justification or evidence note"></textarea>
+            </section>
+
+            <div class="form-actions bottom-action-bar">
+              <button type="button" class="ghost-button" id="prev-record-bottom-button">Previous</button>
+              <button type="button" class="ghost-button accent-button" id="save-entry-bottom-button">Save Current Entry</button>
+              <button type="button" class="ghost-button accent-button secondary-accent-button" id="save-and-next-button">Save and Next</button>
+              <button type="button" class="ghost-button" id="next-record-bottom-button">Next</button>
+              <button type="button" class="ghost-button" id="next-incomplete-bottom-button">Next Incomplete</button>
+              <button type="button" class="ghost-button" id="clear-entry-button">Clear Current Entry</button>
+            </div>
+          </form>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
