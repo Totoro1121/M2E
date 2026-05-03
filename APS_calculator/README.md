@@ -20,8 +20,8 @@ The folder name remains `APS_calculator` for continuity, but the app itself is n
 ## Expected workflow
 
 1. Open `index.html`.
-2. Load `E:\Research\M2E\agentdojo\phase1_outputs\annotation\annotation_template.csv`.
-3. Connect the local `E:\Research\M2E\agentdojo\runs` folder.
+2. Load `\annotation_template.csv`.
+3. Connect the local `\runs` folder.
 4. Decide whether the framework applies, then choose either `none` for a benign/non-applicable trace or the relevant `O1` / `O2` / `O3` objectives.
 5. Complete and save each annotation entry.
 6. Export your CSV as `annotator_A.csv` or `annotator_B.csv`.
